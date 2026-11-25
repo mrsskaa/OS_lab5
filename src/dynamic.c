@@ -4,13 +4,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct {
+struct library {
     void *handle;
     contract_fn prime_count;
     contract_fn gcf;
-} library;
+};
 
-static int close_library(library loaded)
+static int close_library(struct library loaded)
 {
     if (dlclose(loaded.handle) != 0) {
         fprintf(stderr, "Cannot close library: %s\n", dlerror());
@@ -34,7 +34,7 @@ static contract_fn find_function(void *handle, const char *name)
     return function;
 }
 
-static int load_library(const char *path, library *loaded)
+static int load_library(const char *path, struct library *library)
 {
     void *handle = dlopen(path, RTLD_NOW | RTLD_LOCAL);
     if (handle == NULL) {
@@ -42,55 +42,54 @@ static int load_library(const char *path, library *loaded)
         return 0;
     }
 
-    library candidate = {handle, find_function(handle, "PrimeCount"),
+    struct library candidate = {handle, find_function(handle, "PrimeCount"),
                                  find_function(handle, "GCF")};
     if (candidate.prime_count == NULL || candidate.gcf == NULL) {
         return close_library(candidate) ? 0 : -1;
     }
-    *loaded = candidate;
+    *library = candidate;
     return 1;
 }
 
-int main(void)
-{
+
+int main(void){
     const char *paths[] = {LIBRARY_1, LIBRARY_2};
     int active = 0;
-    library current;
+    struct library current;
     if (load_library(paths[active], &current) != 1) {
         return EXIT_FAILURE;
     }
 
-    int result = EXIT_SUCCESS;
-    int command, a = 0, b = 0;
+    int failed = !print_implementation(1);
+    Command command;
     int status = 0;
-    if (!print_implementation(active + 1)) {
-        result = EXIT_FAILURE;
-    }
+    while (!failed && (status = read_command(&command)) > 0) {
+        if (command.type != 0) {
+            failed = !print_result(command, current.prime_count, current.gcf);
+            continue;
+        }
 
-    while (result == EXIT_SUCCESS && (status = read_command(&command, &a, &b)) > 0) {
-        if (command == 0) {
-            int next = 1 - active;
-            library candidate;
-            int loaded = load_library(paths[next], &candidate);
-            if (loaded == 0) {
-                continue;
-            }
-            if (loaded < 0) {
-                result = EXIT_FAILURE;
-                break;
-            }
-            int closed = close_library(current);
-            current = candidate;
-            active = next;
-            if (!closed || !print_implementation(active + 1)) {
-                result = EXIT_FAILURE;
-            }
-        } else if (!print_result(command, a, b, current.prime_count, current.gcf)) {
-            result = EXIT_FAILURE;
+        int next = 1 - active;
+        struct library candidate;
+        int loaded = load_library(paths[next], &candidate);
+        if (loaded == 0) {
+            continue;
+        }
+        if (loaded < 0) {
+            failed = 1;
+            break;
+        }
+
+        int closed = close_library(current);
+        current = candidate;
+        active = next;
+        if (!closed || !print_implementation(active + 1)) {
+            failed = 1;
         }
     }
+
     if (!close_library(current) || status < 0) {
-        result = EXIT_FAILURE;
+        failed = 1;
     }
-    return result;
+    return failed;
 }

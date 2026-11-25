@@ -9,14 +9,16 @@ int main(void){
         return EXIT_FAILURE;
     }
 
-    int command, a = 0, b = 0;
+    Command command;
     int status;
-    while ((status = read_command(&command, &a, &b)) > 0) {
-        if (command == 0) {
+    while ((status = read_command(&command)) > 0) {
+        if (command.type == 0) {
             fprintf(stderr, "Switching libraries is available in dynamic.\n");
-        } else if (!print_result(command, a, b, PrimeCount, GCF)) {
+            continue;
+        }
+        if (!print_result(command, PrimeCount, GCF)) {
             return EXIT_FAILURE;
         }
     }
-    return status == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+    return status < 0;
 }
