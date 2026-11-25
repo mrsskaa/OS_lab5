@@ -4,8 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int main(void)
-{
+int main(void){
     if (!print_implementation(1)) {
         return EXIT_FAILURE;
     }

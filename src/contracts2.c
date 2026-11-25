@@ -1,10 +1,7 @@
 #include "contracts.h"
-
-#include <stdint.h>
 #include <stdlib.h>
 
-int PrimeCount(int A, int B)
-{
+int PrimeCount(int A, int B){
     if (A < 1 || B < A) {
         return -1;
     }
@@ -12,7 +9,6 @@ int PrimeCount(int A, int B)
         return 0;
     }
 
-    /* Use a wide index so marking the last multiple cannot overflow int. */
     int64_t limit = B;
     unsigned char *composite = calloc((size_t)limit + 1, sizeof(*composite));
     if (composite == NULL) {
@@ -38,12 +34,10 @@ int PrimeCount(int A, int B)
     return count;
 }
 
-int GCF(int A, int B)
-{
+int GCF(int A, int B){
     if (A < 1 || B < 1) {
         return -1;
     }
-
     int divisor = A < B ? A : B;
     while (A % divisor != 0 || B % divisor != 0) {
         --divisor;

@@ -7,8 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int read_int(char **cursor, int *number)
-{
+static int read_int(char **cursor, int *number){
     char *end;
     errno = 0;
     long value = strtol(*cursor, &end, 10);
@@ -21,8 +20,7 @@ static int read_int(char **cursor, int *number)
     return 1;
 }
 
-int read_command(int *command, int *a, int *b)
-{
+int read_command(int *command, int *a, int *b){
     char *line = NULL;
     size_t capacity = 0;
     ssize_t length;
@@ -59,8 +57,7 @@ int read_command(int *command, int *a, int *b)
     return 0;
 }
 
-int print_result(int command, int a, int b, contract_fn prime_count, contract_fn gcf)
-{
+int print_result(int command, int a, int b, contract_fn prime_count, contract_fn gcf){
     if (a < 1 || b < 1 || (command == 1 && b < a)) {
         fprintf(stderr, "Expected positive arguments and A <= B for PrimeCount.\n");
         return 1;
@@ -79,8 +76,7 @@ int print_result(int command, int a, int b, contract_fn prime_count, contract_fn
     return 1;
 }
 
-int print_implementation(int implementation)
-{
+int print_implementation(int implementation){
     if (printf("Implementation %d\n", implementation) < 0 || fflush(stdout) == EOF) {
         perror("stdout");
         return 0;

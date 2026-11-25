@@ -4,16 +4,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-struct library {
+typedef struct {
     void *handle;
     contract_fn prime_count;
     contract_fn gcf;
-};
+} library;
 
-static int close_library(struct library library)
+static int close_library(library loaded)
 {
-    if (dlclose(library.handle) != 0) {
-        fprintf(stderr, "dlclose: %s\n", dlerror());
+    if (dlclose(loaded.handle) != 0) {
+        fprintf(stderr, "Cannot close library: %s\n", dlerror());
         return 0;
     }
     return 1;
@@ -22,7 +22,6 @@ static int close_library(struct library library)
 static contract_fn find_function(void *handle, const char *name)
 {
     dlerror();
-    /* POSIX allows the result of dlsym to be converted to a function pointer. */
     contract_fn function = (contract_fn)dlsym(handle, name);
     const char *error = dlerror();
     if (error != NULL) {
@@ -35,8 +34,7 @@ static contract_fn find_function(void *handle, const char *name)
     return function;
 }
 
-/* Return 1 on success, 0 when loading failed, -1 when cleanup failed. */
-static int load_library(const char *path, struct library *library)
+static int load_library(const char *path, library *loaded)
 {
     void *handle = dlopen(path, RTLD_NOW | RTLD_LOCAL);
     if (handle == NULL) {
@@ -44,12 +42,12 @@ static int load_library(const char *path, struct library *library)
         return 0;
     }
 
-    struct library candidate = {handle, find_function(handle, "PrimeCount"),
+    library candidate = {handle, find_function(handle, "PrimeCount"),
                                  find_function(handle, "GCF")};
     if (candidate.prime_count == NULL || candidate.gcf == NULL) {
         return close_library(candidate) ? 0 : -1;
     }
-    *library = candidate;
+    *loaded = candidate;
     return 1;
 }
 
@@ -57,7 +55,7 @@ int main(void)
 {
     const char *paths[] = {LIBRARY_1, LIBRARY_2};
     int active = 0;
-    struct library current;
+    library current;
     if (load_library(paths[active], &current) != 1) {
         return EXIT_FAILURE;
     }
@@ -72,7 +70,7 @@ int main(void)
     while (result == EXIT_SUCCESS && (status = read_command(&command, &a, &b)) > 0) {
         if (command == 0) {
             int next = 1 - active;
-            struct library candidate;
+            library candidate;
             int loaded = load_library(paths[next], &candidate);
             if (loaded == 0) {
                 continue;
