@@ -1,6 +1,5 @@
 #include "console.h"
 #include "contracts.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 
